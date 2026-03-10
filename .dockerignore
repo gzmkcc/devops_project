@@ -1,0 +1,9 @@
+.git
+.gitmodules
+docs
+infra
+k8s
+ansible
+jenkins
+README.md
+**/.DS_Store
