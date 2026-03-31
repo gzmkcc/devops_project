@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-deployment
+  namespace: app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: devops-case-app
+  template:
+    metadata:
+      labels:
+        app: devops-case-app
+    spec:
+      containers:
+        - name: app
+          image: gizemk/devops-case-app:latest
+          ports:
+            - containerPort: 9001
