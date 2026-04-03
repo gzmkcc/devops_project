@@ -4,7 +4,7 @@ metadata:
   name: app-deployment
   namespace: app
 spec:
-  replicas: 1
+  replicas: 4
   selector:
     matchLabels:
       app: devops-case-app
@@ -18,3 +18,26 @@ spec:
           image: gizemk/devops-case-app:latest
           ports:
             - containerPort: 9001
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /api/foos?val=TEST
+              port: 9001
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /api/foos?val=TEST
+              port: 9001
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
