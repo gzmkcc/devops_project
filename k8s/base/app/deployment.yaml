@@ -41,3 +41,21 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 2
             failureThreshold: 3
+          env:
+          - name: APP_MODE
+            valueFrom:
+             configMapKeyRef:
+               name: app-config
+               key: APP_MODE
+
+          - name: APP_VERSION
+            valueFrom:
+             configMapKeyRef:
+               name: app-config
+               key: APP_VERSION
+
+          - name: DB_PASSWORD
+            valueFrom:
+             secretKeyRef:
+              name: app-secret
+              key: DB_PASSWORD
