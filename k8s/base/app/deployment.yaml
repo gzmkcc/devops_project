@@ -21,7 +21,7 @@ spec:
           resources:
             requests:
               cpu: "100m"
-              memory: "128Mi"
+              memory: "256Mi"
             limits:
               cpu: "500m"
               memory: "512Mi"
@@ -59,3 +59,15 @@ spec:
              secretKeyRef:
               name: app-secret
               key: DB_PASSWORD
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - devops-case-app
+              topologyKey: kubernetes.io/hostname
