@@ -1,0 +1,48 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
+        IMAGE_NAME = 'gizemk/devops-case-app'
+        IMAGE_TAG = "${BUILD_NUMBER}"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh """
+                    docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
+                    docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest
+                """
+            }
+        }
+
+        stage('Push to DockerHub') {
+            steps {
+                sh """
+                    echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u ${DOCKERHUB_CREDENTIALS_USR} --password-stdin
+                    docker push ${IMAGE_NAME}:${IMAGE_TAG}
+                    docker push ${IMAGE_NAME}:latest
+                """
+            }
+        }
+    }
+
+    post {
+        always {
+            sh 'docker logout'
+        }
+        success {
+            echo "Image ${IMAGE_NAME}:${IMAGE_TAG} pushed successfully!"
+        }
+        failure {
+            echo "Pipeline failed!"
+        }
+    }
+}

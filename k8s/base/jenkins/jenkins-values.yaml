@@ -1,0 +1,29 @@
+controller:
+  nodeSelector:
+    kubernetes.io/hostname: node-2
+  tolerations: []
+  
+  serviceType: NodePort
+  nodePort: 30081
+  
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1024Mi
+
+  installPlugins:
+    - kubernetes:latest
+    - workflow-aggregator:latest
+    - git:latest
+    - configuration-as-code:latest
+    - docker-workflow:latest
+
+persistence:
+  enabled: true
+  size: 2Gi
+
+agent:
+  enabled: true
