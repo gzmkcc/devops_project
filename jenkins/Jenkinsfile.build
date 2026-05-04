@@ -1,48 +1,70 @@
 pipeline {
-    agent any
+    agent {
+        kubernetes {
+            yaml """
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kaniko
+  namespace: jenkins
+spec:
+  containers:
+  - name: kaniko
+    image: gcr.io/kaniko-project/executor:latest
+    command:
+    - sleep
+    args:
+    - 9999999
+    volumeMounts:
+    - name: docker-credentials
+      mountPath: /kaniko/.docker
+  volumes:
+  - name: docker-credentials
+    secret:
+      secretName: dockerhub-secret
+      items:
+      - key: .dockerconfigjson
+        path: config.json
+"""
+        }
+    }
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
         IMAGE_NAME = 'gizemk/devops-case-app'
-        IMAGE_TAG = "${BUILD_NUMBER}"
+        IMAGE_TAG  = "${BUILD_NUMBER}"
     }
 
     stages {
         stage('Checkout') {
             steps {
+                // Pull source code from GitHub
                 checkout scm
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build & Push') {
             steps {
-                sh """
-                    docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
-                    docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest
-                """
-            }
-        }
-
-        stage('Push to DockerHub') {
-            steps {
-                sh """
-                    echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u ${DOCKERHUB_CREDENTIALS_USR} --password-stdin
-                    docker push ${IMAGE_NAME}:${IMAGE_TAG}
-                    docker push ${IMAGE_NAME}:latest
-                """
+                container('kaniko') {
+                    // Kaniko builds the image from Dockerfile and pushes it
+                    // to DockerHub in a single step — no Docker daemon needed
+                    sh """
+                        /kaniko/executor \
+                          --context=. \
+                          --dockerfile=docker/Dockerfile \
+                          --destination=${IMAGE_NAME}:${IMAGE_TAG} \
+                          --destination=${IMAGE_NAME}:latest
+                    """
+                }
             }
         }
     }
 
     post {
-        always {
-            sh 'docker logout'
-        }
         success {
-            echo "Image ${IMAGE_NAME}:${IMAGE_TAG} pushed successfully!"
+            echo "Image ${IMAGE_NAME}:${IMAGE_TAG} successfully pushed to DockerHub!"
         }
         failure {
-            echo "Pipeline failed!"
+            echo "Pipeline failed."
         }
     }
 }
