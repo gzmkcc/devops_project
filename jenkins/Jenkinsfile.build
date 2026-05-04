@@ -17,7 +17,7 @@ spec:
     volumeMounts:
     - name: docker-credentials
       mountPath: /kaniko/.docker
-    - name: workspace-volume    # add this
+    - name: workspace-volume    
       mountPath: /home/jenkins/agent
   volumes:
   - name: docker-credentials
@@ -35,13 +35,26 @@ spec:
         IMAGE_TAG  = "${BUILD_NUMBER}"
     }
 
-    stages {
-        stage('Checkout') {
-            steps {
-                // Pull source code from GitHub
-                checkout scm
-            }
-        }
+    stage('Checkout') {
+    steps {
+        // Clone the repo including submodules
+        checkout([
+            $class: 'GitSCM',
+            branches: [[name: '*/main']],
+            extensions: [
+                [$class: 'SubmoduleOption',
+                 disableSubmodules: false,
+                 parentCredentials: true,
+                 recursiveSubmodules: true,
+                 trackingSubmodules: false]
+            ],
+            userRemoteConfigs: [[
+                credentialsId: 'dockerhub-credentials',
+                url: 'https://github.com/gzmkcc/devops_project.git'
+            ]]
+        ])
+    }
+}
 
         stage('Build & Push') {
             steps {
