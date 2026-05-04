@@ -17,6 +17,8 @@ spec:
     volumeMounts:
     - name: docker-credentials
       mountPath: /kaniko/.docker
+    - name: workspace-volume    # add this
+      mountPath: /home/jenkins/agent
   volumes:
   - name: docker-credentials
     secret:
