@@ -48,9 +48,9 @@ spec:
                 container('ansible') {
                     sh """
                         ansible-playbook \
-                          -i ansible/inventories/prod/hosts \
-                          ansible/playbooks/deploy-manifests.yaml \
-                          -e "image_tag=${params.IMAGE_TAG}"
+                         -i ansible/inventories/prod/hosts \
+                        ansible/deploy-manifests.yaml \
+                        -e "image_tag=${params.IMAGE_TAG}"
                     """
                 }
             }
