@@ -38,7 +38,6 @@ spec:
     stages {
         stage('Checkout') {
             steps {
-                // Clone the repo including submodules
                 checkout([
                     $class: 'GitSCM',
                     branches: [[name: '*/main']],
@@ -77,6 +76,8 @@ spec:
     post {
         success {
             echo "Image ${IMAGE_NAME}:${IMAGE_TAG} successfully pushed to DockerHub!"
+            build job: 'devops-case-deploy',
+                  parameters: [string(name: 'IMAGE_TAG', value: "${IMAGE_TAG}")]
         }
         failure {
             echo "Pipeline failed."
