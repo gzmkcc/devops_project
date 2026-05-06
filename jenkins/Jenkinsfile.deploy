@@ -8,6 +8,8 @@ metadata:
   name: ansible
   namespace: jenkins
 spec:
+  nodeSelector:
+    kubernetes.io/hostname: node-1
   containers:
   - name: ansible
     image: cytopia/ansible:latest
