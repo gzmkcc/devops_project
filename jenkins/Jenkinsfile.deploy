@@ -1,0 +1,68 @@
+pipeline {
+    agent {
+        kubernetes {
+            yaml """
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ansible
+  namespace: jenkins
+spec:
+  containers:
+  - name: ansible
+    image: cytopia/ansible:latest
+    command:
+    - /bin/cat
+    tty: true
+"""
+        }
+    }
+
+    parameters {
+        string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Docker image tag to deploy')
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    extensions: [
+                        [$class: 'SubmoduleOption',
+                         disableSubmodules: false,
+                         parentCredentials: true,
+                         recursiveSubmodules: true,
+                         trackingSubmodules: false]
+                    ],
+                    userRemoteConfigs: [[
+                        credentialsId: 'dockerhub-credentials',
+                        url: 'https://github.com/gzmkcc/devops_project.git'
+                    ]]
+                ])
+            }
+        }
+
+        stage('Deploy with Ansible') {
+            steps {
+                container('ansible') {
+                    sh """
+                        ansible-playbook \
+                          -i ansible/inventories/prod/hosts \
+                          ansible/playbooks/deploy-manifests.yaml \
+                          -e "image_tag=${params.IMAGE_TAG}"
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Deployment of image tag ${params.IMAGE_TAG} completed successfully!"
+        }
+        failure {
+            echo "Deployment failed."
+        }
+    }
+}
