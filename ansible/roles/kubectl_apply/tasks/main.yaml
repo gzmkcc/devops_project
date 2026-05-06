@@ -1,14 +1,9 @@
 ---
 - name: Update deployment image
-  command: >
-    kubectl set image deployment/app-deployment
-    app=gizemk/devops-case-app:{{ image_tag }}
-    -n app
+  raw: kubectl set image deployment/app-deployment app=gizemk/devops-case-app:{{ image_tag }} -n app
 
 - name: Wait for rollout to complete
-  command: >
-    kubectl rollout status deployment/app-deployment
-    -n app
+  raw: kubectl rollout status deployment/app-deployment -n app
   register: rollout_status
 
 - name: Print rollout status
