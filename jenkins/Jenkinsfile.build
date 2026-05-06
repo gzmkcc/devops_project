@@ -5,29 +5,34 @@ pipeline {
 apiVersion: v1
 kind: Pod
 metadata:
-  name: ansible
+  name: kaniko
   namespace: jenkins
 spec:
   containers:
-  - name: ansible
-    image: cytopia/ansible:latest
+  - name: kaniko
+    image: gcr.io/kaniko-project/executor:debug
     command:
-    - /bin/cat
+    - /busybox/cat
     tty: true
     volumeMounts:
-    - name: ssh-key
-      mountPath: /root/.ssh
+    - name: docker-credentials
+      mountPath: /kaniko/.docker
+    - name: workspace-volume
+      mountPath: /home/jenkins/agent
   volumes:
-  - name: ssh-key
+  - name: docker-credentials
     secret:
-      secretName: vagrant-ssh-key
-      defaultMode: 0400
+      secretName: dockerhub-secret
+      items:
+      - key: .dockerconfigjson
+        path: config.json
 """
         }
     }
 
-    parameters {
-        string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Docker image tag to deploy')
+    environment {
+        IMAGE_NAME = 'gizemk/devops-case-app'
+        IMAGE_TAG  = "${BUILD_NUMBER}"
     }
 
     stages {
@@ -51,14 +56,17 @@ spec:
             }
         }
 
-        stage('Deploy with Ansible') {
+        stage('Build & Push') {
             steps {
-                container('ansible') {
+                container('kaniko') {
+                    // Kaniko builds the image from Dockerfile and pushes it
+                    // to DockerHub in a single step — no Docker daemon needed
                     sh """
-                        ansible-playbook \
-                          -i ansible/inventories/prod/hosts \
-                          ansible/playbooks/deploy-manifests.yaml \
-                          -e "image_tag=${params.IMAGE_TAG}"
+                        /kaniko/executor \
+                          --context=. \
+                          --dockerfile=docker/Dockerfile \
+                          --destination=${IMAGE_NAME}:${IMAGE_TAG} \
+                          --destination=${IMAGE_NAME}:latest
                     """
                 }
             }
@@ -67,10 +75,12 @@ spec:
 
     post {
         success {
-            echo "Deployment of image tag ${params.IMAGE_TAG} completed successfully!"
+            echo "Image ${IMAGE_NAME}:${IMAGE_TAG} successfully pushed to DockerHub!"
+            build job: 'devops-case-deploy',
+                  parameters: [string(name: 'IMAGE_TAG', value: "${IMAGE_TAG}")]
         }
         failure {
-            echo "Deployment failed."
+            echo "Pipeline failed."
         }
     }
 }
