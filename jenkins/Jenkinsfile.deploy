@@ -8,7 +8,7 @@ metadata:
   name: ansible
   namespace: jenkins
 spec:
- containers:
+  containers:
   - name: ansible
     image: cytopia/ansible:latest
     command:
@@ -24,6 +24,11 @@ spec:
     volumeMounts:
     - name: ssh-key
       mountPath: /root/.ssh
+  volumes:
+  - name: ssh-key
+    secret:
+      secretName: vagrant-ssh-key
+      defaultMode: 0400
 """
         }
     }
