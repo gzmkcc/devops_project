@@ -1,0 +1,94 @@
+# PriorityClass for App X (high priority - real-time)
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: high-priority-realtime
+value: 1000000
+globalDefault: false
+description: "High priority for real-time applications"
+---
+# PriorityClass for App Y (low priority - batch jobs)
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: low-priority-batch
+value: 1000
+globalDefault: false
+description: "Low priority for batch jobs - preemptible"
+---
+# App X Deployment - Real-time application
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-x
+  namespace: app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: app-x
+  template:
+    metadata:
+      labels:
+        app: app-x
+    spec:
+      priorityClassName: high-priority-realtime
+      containers:
+      - name: app-x
+        image: app-x:latest
+        resources:
+          requests:
+            cpu: 500m
+            memory: 256Mi
+          limits:
+            cpu: 1000m
+            memory: 512Mi
+---
+# App Y Deployment - Batch jobs (killable)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-y
+  namespace: app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: app-y
+  template:
+    metadata:
+      labels:
+        app: app-y
+    spec:
+      priorityClassName: low-priority-batch
+      containers:
+      - name: app-y
+        image: app-y:latest
+        resources:
+          requests:
+            cpu: 500m
+            memory: 256Mi
+          limits:
+            cpu: 1000m
+            memory: 512Mi
+---
+# HPA for App X
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: app-x-hpa
+  namespace: app
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: app-x
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 60
