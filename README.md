@@ -1,4 +1,5 @@
-#  DevOps Engineering Case
+# # Production-like Kubernetes Infrastructure
+*A hands-on DevOps case study covering the full DevOps lifecycle*
 
 This repository contains a production-like Kubernetes infrastructure implementation covering the full DevOps lifecycle — from cluster setup to CI/CD pipelines, monitoring, logging, and security.
 
