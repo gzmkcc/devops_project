@@ -1,4 +1,4 @@
-# Dream Games DevOps Engineering Case
+#  DevOps Engineering Case
 
 This repository contains a production-like Kubernetes infrastructure implementation covering the full DevOps lifecycle — from cluster setup to CI/CD pipelines, monitoring, logging, and security.
 
